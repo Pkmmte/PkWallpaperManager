@@ -24,14 +24,12 @@
 
 package com.pk.wallpapermanager;
 
-import android.graphics.Bitmap;
-
 /**
  * A listener that notifies you when a specific event is going on
- * regarding applying a wallpaper.
+ * regarding local wallpapers.
  */
-public interface OnWallpaperSetListener
+public interface LocalWallpaperListener
 {
-	public void onWallpaperSet(Bitmap wallpaper);
-	public void onWallpaperSetFailed();
+	public void onLocalWallpapersLoading();
+	public void onLocalWallpapersLoaded();
 }

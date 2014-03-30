@@ -26,10 +26,11 @@ package com.pk.wallpapermanager;
 
 /**
  * A listener that notifies you when a specific event is going on
- * regarding local wallpapers.
+ * regarding downloading a wallpaper.
  */
-public interface OnLocalWallpaperStatusListener
+public interface WallpaperDownloadListener
 {
-	public void onLocalWallpapersLoading();
-	public void onLocalWallpapersLoaded();
+	public void onWallpaperDownloading(Wallpaper mWallpaper, int progress);
+	public void onWallpaperDownloaded(Wallpaper mWallpaper);
+	public void onWallpaperDownloadFailed(Wallpaper mWallpaper);
 }

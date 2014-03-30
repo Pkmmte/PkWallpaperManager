@@ -28,7 +28,7 @@ package com.pk.wallpapermanager;
  * A listener that notifies you when a specific event is going on
  * regarding cloud wallpapers.
  */
-public interface OnCloudWallpaperStatusListener
+public interface CloudWallpaperListener
 {
 	public void onCloudWallpapersLoading();
 	public void onCloudWallpapersLoaded();

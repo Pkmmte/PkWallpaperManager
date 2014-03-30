@@ -30,7 +30,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -60,15 +59,12 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.util.Log;
 
-public class PkWallpaperManager
+public class PkWallpaperManager extends Static
 {
 	//	TODO
 	// 	- Cache wallpaper list in SharedPreferences in the onStop of MainActivity and WallpaperActivity
@@ -97,7 +93,7 @@ public class PkWallpaperManager
 	
 	// For issue tracking purposes
 	private boolean debugEnabled;
-	private static final String LOG_TAG = "WallpaperManager";
+	private static final String LOG_TAG = "PkWallpaperManager";
 	
 	// Custom request configuration data
 	private WallpaperSettings mSettings;
@@ -111,10 +107,10 @@ public class PkWallpaperManager
 	private AsyncTask<Void, Void, Void> wallpapersTask;
 	
 	// Listeners for various loading events
-	private List<OnLocalWallpaperStatusListener> mOnLocalWallpaperStatusListeners;
-	private List<OnCloudWallpaperStatusListener> mOnCloudWallpaperStatusListeners;
-	private List<OnWallpaperSetListener> mOnWallpaperSetListeners;
-	private List<OnWallpaperDownloadStatusListener> mOnWallpaperDownloadStatusListeners;
+	private List<LocalWallpaperListener> mLocalWallpaperListeners;
+	private List<CloudWallpaperListener> mCloudWallpaperListeners;
+	private List<WallpaperSetListener> mWallpaperSetListeners;
+	private List<WallpaperDownloadListener> mWallpaperDownloadListeners;
 	
 	// Our handy client for getting API JSON data
 	private HttpClient httpClient;
@@ -169,10 +165,10 @@ public class PkWallpaperManager
 		this.mContext = context;
 		this.mLocalWallpapers = new ArrayList<Wallpaper>();
 		this.mCloudWallpapers = new ArrayList<Wallpaper>();
-		this.mOnLocalWallpaperStatusListeners = new ArrayList<OnLocalWallpaperStatusListener>();
-		this.mOnCloudWallpaperStatusListeners = new ArrayList<OnCloudWallpaperStatusListener>();
-		this.mOnWallpaperSetListeners = new ArrayList<OnWallpaperSetListener>();
-		this.mOnWallpaperDownloadStatusListeners = new ArrayList<OnWallpaperDownloadStatusListener>();
+		this.mLocalWallpaperListeners = new ArrayList<LocalWallpaperListener>();
+		this.mCloudWallpaperListeners = new ArrayList<CloudWallpaperListener>();
+		this.mWallpaperSetListeners = new ArrayList<WallpaperSetListener>();
+		this.mWallpaperDownloadListeners = new ArrayList<WallpaperDownloadListener>();
 		this.initHttpClient();
 		this.initLocalWallpapersTask();
 		this.initCloudWallpapersTask();
@@ -197,7 +193,7 @@ public class PkWallpaperManager
 		Wallpaper mWall = null;
 		
 		// Loop through all listeners notifying them
-        for(OnLocalWallpaperStatusListener mListener : mOnLocalWallpaperStatusListeners) {
+        for(LocalWallpaperListener mListener : mLocalWallpaperListeners) {
         	mListener.onLocalWallpapersLoading();
         }
 		
@@ -224,7 +220,7 @@ public class PkWallpaperManager
         	Log.d(LOG_TAG, "Finished loading " + mLocalWallpapers.size() + " local wallpapers!");
         
         // Loop through all listeners notifying them
-        for(OnLocalWallpaperStatusListener mListener : mOnLocalWallpaperStatusListeners) {
+        for(LocalWallpaperListener mListener : mLocalWallpaperListeners) {
         	mListener.onLocalWallpapersLoaded();
         }
 	}
@@ -291,7 +287,7 @@ public class PkWallpaperManager
         }
         
         // Loop through all listeners notifying them
-        for(OnCloudWallpaperStatusListener mListener : mOnCloudWallpaperStatusListeners) {
+        for(CloudWallpaperListener mListener : mCloudWallpaperListeners) {
         	mListener.onCloudWallpapersLoading();
         }
         
@@ -326,7 +322,7 @@ public class PkWallpaperManager
         	Log.d(LOG_TAG, "Finished loading " + mCloudWallpapers.size() + " cloud wallpapers!");
         
         // Loop through all listeners notifying them
-        for(OnCloudWallpaperStatusListener mListener : mOnCloudWallpaperStatusListeners) {
+        for(CloudWallpaperListener mListener : mCloudWallpaperListeners) {
         	mListener.onCloudWallpapersLoaded();
         }
 	}
@@ -453,115 +449,115 @@ public class PkWallpaperManager
 	}
 	
 	/**
-	 * Adds an OnLocalWallpaperStatusListener to this global instance.
+	 * Adds an LocalWallpaperListener to this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void addOnLocalWallpaperStatusListener(OnLocalWallpaperStatusListener listener)
+	public void addLocalWallpaperListener(LocalWallpaperListener listener)
 	{
-		mOnLocalWallpaperStatusListeners.add(listener);
+		mLocalWallpaperListeners.add(listener);
 	}
 	
 	/**
-	 * Removes an OnLocalWallpaperStatusListener from this global instance.
+	 * Removes an LocalWallpaperListener from this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void removeOnLocalWallpaperStatusListener(OnLocalWallpaperStatusListener listener)
+	public void removeLocalWallpaperListener(LocalWallpaperListener listener)
 	{
-		mOnLocalWallpaperStatusListeners.remove(listener);
+		mLocalWallpaperListeners.remove(listener);
 	}
 	
 	/**
-	 * Removes all OnLocalWallpaperStatusListeners from this global instance.
+	 * Removes all LocalWallpaperListeners from this global instance.
 	 */
-	public void removeAllOnLocalWallpaperStatusListeners()
+	public void removeAllLocalWallpaperListeners()
 	{
-		mOnLocalWallpaperStatusListeners.clear();
+		mLocalWallpaperListeners.clear();
 	}
 	
 	/**
-	 * Adds an OnCloudWallpaperStatusListener to this global instance.
+	 * Adds an CloudWallpaperListener to this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void addOnCloudWallpaperStatusListener(OnCloudWallpaperStatusListener listener)
+	public void addCloudWallpaperListener(CloudWallpaperListener listener)
 	{
-		mOnCloudWallpaperStatusListeners.add(listener);
+		mCloudWallpaperListeners.add(listener);
 	}
 	
 	/**
-	 * Removes an OnCloudWallpaperStatusListener from this global instance.
+	 * Removes an CloudWallpaperListener from this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void removeOnCloudWallpaperStatusListener(OnCloudWallpaperStatusListener listener)
+	public void removeCloudWallpaperListener(CloudWallpaperListener listener)
 	{
-		mOnCloudWallpaperStatusListeners.remove(listener);
+		mCloudWallpaperListeners.remove(listener);
 	}
 	
 	/**
-	 * Removes all OnCloudWallpaperStatusListeners from this global instance.
+	 * Removes all CloudWallpaperListeners from this global instance.
 	 */
-	public void removeAllOnCloudWallpaperStatusListeners()
+	public void removeAllCloudWallpaperListeners()
 	{
-		mOnCloudWallpaperStatusListeners.clear();
+		mCloudWallpaperListeners.clear();
 	}
 	
 	/**
-	 * Adds an OnWallpaperSetListener to this global instance.
+	 * Adds an WallpaperSetListener to this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void addOnWallpaperSetListener(OnWallpaperSetListener listener)
+	public void addWallpaperSetListener(WallpaperSetListener listener)
 	{
-		mOnWallpaperSetListeners.add(listener);
+		mWallpaperSetListeners.add(listener);
 	}
 	
 	/**
-	 * Removes an OnWallpaperSetListener from this global instance.
+	 * Removes an WallpaperSetListener from this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void removeOnWallpaperSetListener(OnWallpaperSetListener listener)
+	public void removeWallpaperSetListener(WallpaperSetListener listener)
 	{
-		mOnWallpaperSetListeners.remove(listener);
+		mWallpaperSetListeners.remove(listener);
 	}
 	
 	/**
-	 * Removes all OnWallpaperSetListeners from this global instance.
+	 * Removes all WallpaperSetListeners from this global instance.
 	 */
-	public void removeAllOnWallpaperSetListeners()
+	public void removeAllWallpaperSetListeners()
 	{
-		mOnWallpaperSetListeners.clear();
+		mWallpaperSetListeners.clear();
 	}
 	
 	/**
-	 * Adds an OnWallpaperDownloadStatusListener to this global instance.
+	 * Adds an WallpaperDownloadListener to this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void addOnWallpaperDownloadStatusListener(OnWallpaperDownloadStatusListener listener)
+	public void addWallpaperDownloadListener(WallpaperDownloadListener listener)
 	{
-		mOnWallpaperDownloadStatusListeners.add(listener);
+		mWallpaperDownloadListeners.add(listener);
 	}
 	
 	/**
-	 * Removes an OnWallpaperDownloadStatusListener from this global instance.
+	 * Removes an WallpaperDownloadListener from this global instance.
 	 * 
 	 * @param listener
 	 */
-	public void removeOnWallpaperDownloadStatusListener(OnWallpaperDownloadStatusListener listener)
+	public void removeWallpaperDownloadListener(WallpaperDownloadListener listener)
 	{
-		mOnWallpaperDownloadStatusListeners.remove(listener);
+		mWallpaperDownloadListeners.remove(listener);
 	}
 	
 	/**
-	 * Removes all OnWallpaperDownloadStatusListeners from this global instance.
+	 * Removes all WallpaperDownloadListeners from this global instance.
 	 */
-	public void removeAllOnWallpaperDownloadStatusListeners()
+	public void removeAllWallpaperDownloadListeners()
 	{
-		mOnWallpaperDownloadStatusListeners.clear();
+		mWallpaperDownloadListeners.clear();
 	}
 	
 	/**
@@ -569,10 +565,10 @@ public class PkWallpaperManager
 	 */
 	public void removeAllListeners()
 	{
-		mOnLocalWallpaperStatusListeners.clear();
-		mOnCloudWallpaperStatusListeners.clear();
-		mOnWallpaperSetListeners.clear();
-		mOnWallpaperDownloadStatusListeners.clear();
+		mLocalWallpaperListeners.clear();
+		mCloudWallpaperListeners.clear();
+		mWallpaperSetListeners.clear();
+		mWallpaperDownloadListeners.clear();
 	}
 	
 	/**
@@ -598,7 +594,7 @@ public class PkWallpaperManager
 		}
 		
 		// Loop through all listeners notifying them
-        for(OnWallpaperDownloadStatusListener mListener : mOnWallpaperDownloadStatusListeners) {
+        for(WallpaperDownloadListener mListener : mWallpaperDownloadListeners) {
         	mListener.onWallpaperDownloading(mWall, 0);
         }
 		
@@ -622,7 +618,7 @@ public class PkWallpaperManager
             Log.d(LOG_TAG, "Download Progress: " + progress);
             
             // Loop through all listeners notifying them
-            for(OnWallpaperDownloadStatusListener mListener : mOnWallpaperDownloadStatusListeners) {
+            for(WallpaperDownloadListener mListener : mWallpaperDownloadListeners) {
             	mListener.onWallpaperDownloading(mWall, progress);
             }
 
@@ -641,7 +637,7 @@ public class PkWallpaperManager
         new SingleMediaScanner(mContext, file).scanMedia();
         
         // Loop through all listeners notifying them
-        for(OnWallpaperDownloadStatusListener mListener : mOnWallpaperDownloadStatusListeners) {
+        for(WallpaperDownloadListener mListener : mWallpaperDownloadListeners) {
         	mListener.onWallpaperDownloaded(mWall);
         }
         
@@ -667,7 +663,7 @@ public class PkWallpaperManager
 					downloadWallpaper(mWall, notification, builder);
 				} catch (Exception e) {
 					// Loop through all listeners notifying them
-			        for(OnWallpaperDownloadStatusListener mListener : mOnWallpaperDownloadStatusListeners) {
+			        for(WallpaperDownloadListener mListener : mWallpaperDownloadListeners) {
 			        	mListener.onWallpaperDownloadFailed(mWall);
 			        }
 			        
@@ -708,7 +704,7 @@ public class PkWallpaperManager
 		}
 		
 		// Loop through all listeners notifying them
-        for(OnWallpaperSetListener mListener : mOnWallpaperSetListeners) {
+        for(WallpaperSetListener mListener : mWallpaperSetListeners) {
         	mListener.onWallpaperSet(bitmap);
         }
         
@@ -733,7 +729,7 @@ public class PkWallpaperManager
 					setWallpaper(mWall);
 				} catch (Exception e) {
 					// Loop through all listeners notifying them
-			        for(OnWallpaperSetListener mListener : mOnWallpaperSetListeners) {
+			        for(WallpaperSetListener mListener : mWallpaperSetListeners) {
 			        	mListener.onWallpaperSetFailed();
 			        }
 			        
@@ -873,151 +869,5 @@ public class PkWallpaperManager
 				initWallpapersTask();
 			}
 		};
-	}
-	
-	/** Static Functions - Do not require instance **/
-	
-	/**
-	 * Sets the system wallpaper to the Wallpaper object passed.
-	 * May throw an exception if the data is invalid.
-	 * <p>
-	 * Note: Do NOT call this from the main UI thread if you're 
-	 * setting it to a cloud wallpaper! Call setWallpaperAsync instead.
-	 * 
-	 * @param context
-	 * @param mWall
-	 * @throws NumberFormatException
-	 * @throws IOException
-	 */
-	public static void setWallpaper(Context context, Wallpaper mWall) throws NumberFormatException, IOException
-	{
-		android.app.WallpaperManager wallManager = android.app.WallpaperManager.getInstance(context);
-		
-		if(mWall.isLocal())
-			wallManager.setResource(mWall.getFullResource());
-		else {
-			Bitmap bitmap = getBitmapFromURL(mWall.getFullURL());
-			wallManager.setBitmap(bitmap);
-		}
-	}
-	
-	/**
-	 * Sets the system wallpaper to the Wallpaper object passed.
-	 * May throw an exception if the data is invalid.
-	 * <p>
-	 * This does not guarantee success. For further detail, use 
-	 * the instance method along with the interface.
-	 * 
-	 * @param context
-	 * @param mWall
-	 */
-	public static void setWallpaperAsync(final Context context, final Wallpaper mWall)
-	{
-		new AsyncTask<Void, Void, Void>() {
-			@Override
-			protected Void doInBackground(Void... params) {
-				try {
-					setWallpaper(context, mWall);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				
-				return null;
-			}
-		}.execute();
-	}
-	
-	public static void downloadWallpaper(Context context, Wallpaper mWall) throws IOException
-	{
-		downloadWallpaper(context, mWall, null);
-	}
-	
-	/**
-	 * Downloads the wallpaper.
-	 * Requires context and may throw an exception.
-	 * <p>
-	 * Note: Do NOT run this on the main UI thread or it may crash.
-	 * Use the Async variant instead.
-	 * 
-	 * @param context
-	 * @param mWall
-	 * @throws IOException
-	 */
-	public static void downloadWallpaper(Context context, Wallpaper mWall, String saveLocation) throws IOException
-	{
-		// Returns and does nothing if the wallpaper is null or local
-		if(mWall == null || mWall.isLocal()) 
-			return;
-		
-        // Connect to the server
-        URL url = new URL(mWall.getFullURL());
-        URLConnection conection = url.openConnection();
-        conection.connect();
-        InputStream input = new BufferedInputStream(url.openStream(), 8192);
-
-        // Output stream
-        String fileName = mWall.getTitle().length() > 0 ? mWall.getTitle() + mWall.getRelativeFullURL().substring(mWall.getRelativeFullURL().lastIndexOf(".")) : mWall.getRelativeFullURL();
-        String saveLoc = saveLocation == null ? Environment.getExternalStorageDirectory().getAbsolutePath() + "/.theme_wallpapers" : saveLocation;
-        File file = new File(saveLoc + "/" + fileName);
-        file.getParentFile().mkdirs();
-        OutputStream output = new FileOutputStream(file);
-        
-        byte data[] = new byte[2048];
-		int count;
-        while ((count = input.read(data)) != -1) {
-            // Writing data to file
-            output.write(data, 0, count);
-        }
-
-        // Flushing output
-        output.flush();
-
-        // Closing streams
-        output.close();
-        input.close();
-        
-        // Scan for newly downloaded media
-        MediaScannerConnection.scanFile(context, new String[] {file.getAbsolutePath()}, null, null);
-	}
-	
-	/**
-	 * Downloads the wallpaper asynchronously. Will not throw exceptions.
-	 * <p>
-	 * Note: Use the instance version of this method for progress details.
-	 * 
-	 * @param context
-	 * @param mWall
-	 */
-	public static void downloadWallpaperAsync(final Context context, final Wallpaper mWall)
-	{
-		new AsyncTask<Void, Void, Void>() {
-			@Override
-			protected Void doInBackground(Void... params) {
-				try {
-					downloadWallpaper(context, mWall);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				
-				return null;
-			}
-		}.execute();
-	}
-	
-	private static Bitmap getBitmapFromURL(String source)
-	{
-		try {
-	        URL url = new URL(source);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setDoInput(true);
-	        connection.connect();
-	        InputStream input = connection.getInputStream();
-	        Bitmap myBitmap = BitmapFactory.decodeStream(input);
-	        return myBitmap;
-	    }
-		catch (IOException e) {
-	        e.printStackTrace();
-	        return null;
-	    }
 	}
 }
