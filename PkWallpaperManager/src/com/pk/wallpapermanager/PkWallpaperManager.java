@@ -104,7 +104,6 @@ public class PkWallpaperManager extends Static
 	// Background threads
 	private AsyncTask<Void, Void, Void> localWallpapersTask;
 	private AsyncTask<Void, Void, Void> cloudWallpapersTask;
-	private AsyncTask<Void, Void, Void> wallpapersTask;
 	
 	// Listeners for various loading events
 	private List<LocalWallpaperListener> mLocalWallpaperListeners;
@@ -172,11 +171,12 @@ public class PkWallpaperManager extends Static
 		this.initHttpClient();
 		this.initLocalWallpapersTask();
 		this.initCloudWallpapersTask();
-		this.initWallpapersTask();
 	}
 	
 	/**
-	 * Loads wallpapers stored locally.
+	 * Loads wallpapers stored locally.<br>
+	 * Make sure to have set your String Array of Local Wallpapers in 
+	 * your settings before calling this method.
 	 */
 	public void fetchLocalWallpapers()
 	{
@@ -226,13 +226,35 @@ public class PkWallpaperManager extends Static
 	}
 	
 	/**
-	 * Loads wallpapers stored locally asynchronously.
+	 * Loads wallpapers stored locally asynchronously in parallel.<br>
+	 * Make sure to have set your String Array of Local Wallpapers in 
+	 * your settings before calling this method.
+	 * <p>
+	 * This will not throw any exceptions but it does not guarantee success either.
+	 * Use this as a lazy way of loading stuff in the background.
+	 * 
 	 */
 	public void fetchLocalWallpapersAsync()
 	{
+		fetchLocalWallpapersAsync(true);
+	}
+	
+	/**
+	 * Loads wallpapers stored locally asynchronously.<br>
+	 * Make sure to have set your String Array of Local Wallpapers in 
+	 * your settings before calling this method.
+	 * <p>
+	 * This will not throw any exceptions but it does not guarantee success either.
+	 * Use this as a lazy way of loading stuff in the background.
+	 * 
+	 * @param parallel	Boolean indicating whether to run serially or in parallel. 
+	 * 					True for parallel, False for serial.
+	 */
+	public void fetchLocalWallpapersAsync(boolean parallel)
+	{
 		if(localWallpapersTask.getStatus() == AsyncTask.Status.PENDING) {
 			// Execute task if it's ready to go!
-			localWallpapersTask.execute();
+			localWallpapersTask.executeOnExecutor(parallel ? AsyncTask.THREAD_POOL_EXECUTOR : AsyncTask.SERIAL_EXECUTOR);
 		}
 		else if(localWallpapersTask.getStatus() == AsyncTask.Status.RUNNING && debugEnabled) {
 			// Don't execute if already running
@@ -244,7 +266,7 @@ public class PkWallpaperManager extends Static
 				Log.d(LOG_TAG, "Uh oh, it appears the task has finished without being reset. Resetting task...");
 			
 			initLocalWallpapersTask();
-			fetchLocalWallpapersAsync();
+			fetchLocalWallpapersAsync(parallel);
 		}
 	}
 	
@@ -261,6 +283,14 @@ public class PkWallpaperManager extends Static
 	 */
 	public void fetchCloudWallpapers() throws ClientProtocolException, IOException, JSONException
 	{
+		// Cancel if not enabled
+		if(!mSettings.getWebEnabled()) {
+			if(debugEnabled)
+				Log.d(LOG_TAG, "Cloud wallpapers aren't enabled in settings! Canceling task...");
+			
+			return;
+		}
+		
 		// Retrieve Metadata URL or build default (if null)
 		String metadataURL = mSettings.getMetadataURL();
 		if(metadataURL == null) {
@@ -328,17 +358,32 @@ public class PkWallpaperManager extends Static
 	}
 	
 	/**
-	 * Loads wallpapers stored on your cloud repository asynchronously. It's safe to 
-	 * call this on the main UI thread.
+	 * Loads wallpapers stored on your cloud repository asynchronously in parallel. 
+	 * It's safe to call this on the main UI thread.
 	 * <p>
 	 * This will not throw any exceptions but it does not guarantee success either.
 	 * Use this as a lazy way of loading stuff in the background.
 	 */
 	public void fetchCloudWallpapersAsync()
 	{
+		fetchCloudWallpapersAsync(true);
+	}
+	
+	/**
+	 * Loads wallpapers stored on your cloud repository asynchronously. It's safe to 
+	 * call this on the main UI thread.
+	 * <p>
+	 * This will not throw any exceptions but it does not guarantee success either.
+	 * Use this as a lazy way of loading stuff in the background.
+	 * 
+	 * @param parallel	Boolean indicating whether to run serially or in parallel. 
+	 * 					True for parallel, False for serial.
+	 */
+	public void fetchCloudWallpapersAsync(boolean parallel)
+	{
 		if(cloudWallpapersTask.getStatus() == AsyncTask.Status.PENDING) {
 			// Execute task if it's ready to go!
-			cloudWallpapersTask.execute();
+			cloudWallpapersTask.executeOnExecutor(parallel ? AsyncTask.THREAD_POOL_EXECUTOR : AsyncTask.SERIAL_EXECUTOR);
 		}
 		else if(cloudWallpapersTask.getStatus() == AsyncTask.Status.RUNNING && debugEnabled) {
 			// Don't execute if already running
@@ -350,7 +395,7 @@ public class PkWallpaperManager extends Static
 				Log.d(LOG_TAG, "Uh oh, it appears the task has finished without being reset. Resetting task...");
 			
 			initCloudWallpapersTask();
-			fetchCloudWallpapersAsync();
+			fetchCloudWallpapersAsync(parallel);
 		}
 	}
 	
@@ -365,35 +410,33 @@ public class PkWallpaperManager extends Static
 	public void fetchWallpapers() throws ClientProtocolException, IOException, JSONException
 	{
 		fetchLocalWallpapers();
-		
-		if(mSettings.getWebEnabled())
-			fetchCloudWallpapers();
+		fetchCloudWallpapers();
 	}
 	
 	/**
-	 * Loads all wallpapers. If you have cloud wallpapers enabled, 
-	 * this will load those too.
+	 * Loads all wallpapers asynchronously in parallel. 
+	 * If you have cloud wallpapers enabled, this will load those too.
 	 * <p>
 	 * No exceptions will be thrown but nothing is guaranteed.
 	 */
 	public void fetchWallpapersAsync()
 	{
-		if(wallpapersTask.getStatus() == AsyncTask.Status.PENDING) {
-			// Execute task if it's ready to go!
-			wallpapersTask.execute();
-		}
-		else if(wallpapersTask.getStatus() == AsyncTask.Status.RUNNING && debugEnabled) {
-			// Don't execute if already running
-			Log.d(LOG_TAG, "Task is already running...");
-		}
-		else if(wallpapersTask.getStatus() == AsyncTask.Status.FINISHED) {
-			// Okay, this is not supposed to happen. Reset and recall.
-			if(debugEnabled)
-				Log.d(LOG_TAG, "Uh oh, it appears the task has finished without being reset. Resetting task...");
-			
-			initWallpapersTask();
-			fetchWallpapersAsync();
-		}
+		fetchWallpapersAsync(true);
+	}
+	
+	/**
+	 * Loads all wallpapers asynchronously in parallel. 
+	 * If you have cloud wallpapers enabled, this will load those too.
+	 * <p>
+	 * No exceptions will be thrown but nothing is guaranteed.
+	 * 
+	 * @param parallel	Boolean indicating whether to run serially or in parallel. 
+	 * 					True for parallel, False for serial.
+	 */
+	public void fetchWallpapersAsync(boolean parallel)
+	{
+		fetchLocalWallpapersAsync(parallel);
+		fetchCloudWallpapersAsync(parallel);
 	}
 	
 	/**
@@ -843,30 +886,6 @@ public class PkWallpaperManager extends Static
 			protected void onPostExecute(Void p)
 			{
 				initCloudWallpapersTask();
-			}
-		};
-	}
-	
-	/**
-	 * Initializes our wallpapers thread.
-	 */
-	private void initWallpapersTask()
-	{
-		this.wallpapersTask = new AsyncTask<Void, Void, Void>() {
-			@Override
-			protected Void doInBackground(Void... params) {
-				try {
-					fetchWallpapers();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				return null;
-			}
-			
-			@Override
-			protected void onPostExecute(Void p)
-			{
-				initWallpapersTask();
 			}
 		};
 	}
