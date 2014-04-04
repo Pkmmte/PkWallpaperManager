@@ -55,7 +55,7 @@ public class WallpaperSettings
 		this.serverURL = "http://www.the1template.com";
 		this.storageURL = "http://storage.the1template.com";
 		this.thumbSuffix = "_small";
-		this.wallpaperPath = "/wallpapers/" + packageID;
+		this.wallpaperPath = "wallpapers/" + packageID;
 		this.webEnabled = true;
 		this.byteBuffer = 2048;
 	}

@@ -56,6 +56,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.NotificationManager;
+import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -642,7 +643,7 @@ public class PkWallpaperManager extends Static
         }
 		
         // Connect to the server
-        URL url = new URL(mSettings.getStorageURL() + mSettings.getWallpaperPath() + "/" + mWall.getRelativeFullURL());
+        URL url = new URL(mSettings.getStorageURL() + "/" + mSettings.getWallpaperPath() + "/" + mWall.getRelativeFullURL());
         URLConnection connection = url.openConnection();
         connection.connect();
         InputStream input = new BufferedInputStream(url.openStream(), 8192);
@@ -735,7 +736,7 @@ public class PkWallpaperManager extends Static
 			Log.d(LOG_TAG, "Setting wallpaper...");
 		
 		// Load the original system WallpaperManager
-		android.app.WallpaperManager wallManager = android.app.WallpaperManager.getInstance(mContext);
+		WallpaperManager wallManager = WallpaperManager.getInstance(mContext);
 		Bitmap bitmap = null;
 		
 		// Set resource if local, otherwise download it and set it
